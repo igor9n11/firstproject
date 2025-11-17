@@ -2,7 +2,10 @@ import matplotlib.pyplot as plt
 import opendatasets as od
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import r2_score
+
 pd.set_option('display.max_columns', None)
 url = "https://www.kaggle.com/datasets/kainatjamil12/students-exams-score-analysis-dataset"
 od.download(url)
@@ -19,7 +22,8 @@ else:
     print('Дупликатов не найдено')
 print(df.info())
 print(df.describe())
-
+X = df.drop(['student_id','exam_score'], axis=1)
+target = df['exam_score']
 fig,axs = plt.subplots(1,2, figsize=(13,7))
 axs[0].hist(df['sleep_hours'], bins = 50, color='orchid', edgecolor='black', alpha=0.6)
 axs[0].set_title('Распределение Часов сна студентов')
@@ -45,14 +49,11 @@ ax[1].set_title('Разброс посещаемости, результатов
 #plt.show()
 #plt.close()
 print(df['exam_score'].max()<df['previous_scores'].mean())
-
-x = df.drop("student_id", axis=1)
 scaler = StandardScaler()
-x_scaled = scaler.fit_transform(x)
-print(x_scaled)
+X_scaled = scaler.fit_transform(X)
 data = df
-std_data = pd.DataFrame(x_scaled, columns = x.columns)
-figr, axs = plt.subplots(2,2, figsize=(14,8))
+std_data = pd.DataFrame(X_scaled, columns = X.columns)
+figr, axs = plt.subplots(2,2, figsize=(14,9))
 axs[0,0].bar(data.index, data['hours_studied']); axs[0,0].set_title('Время учёбы')
 axs[0,0].set_xlabel('Кол-во студентов')
 axs[0,0].set_ylabel('Часы')
@@ -63,4 +64,12 @@ axs[1,0].bar(std_data.index, std_data['hours_studied']); axs[1,0].set_title('С�
 axs[1,0].set_xlabel('Кол-во студентов')
 axs[1,1].bar(std_data.index, std_data['previous_scores']); axs[1,1].set_title('Стандартизированное')
 axs[1,1].set_xlabel('Кол-во студентов')
-plt.show()
+#plt.show()
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, target, test_size = 0.2, random_state = 42)
+from sklearn.linear_model import LinearRegression
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+ylr_pred = lr.predict(X_test)
+r2 = r2_score(y_test, ylr_pred)
+print(ylr_pred)
+print(r2)
