@@ -2,10 +2,11 @@ import matplotlib.pyplot as plt
 import opendatasets as od
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score
-
+from sklearn.linear_model import LinearRegression, Ridge
 pd.set_option('display.max_columns', None)
 url = "https://www.kaggle.com/datasets/kainatjamil12/students-exams-score-analysis-dataset"
 od.download(url)
@@ -48,7 +49,7 @@ ax[1].boxplot([df['attendance_percent'],df['previous_scores'], df['exam_score']]
 ax[1].set_title('Разброс посещаемости, результатов экзаменов')
 #plt.show()
 #plt.close()
-print(df['exam_score'].max()<df['previous_scores'].mean())
+print(df['exam_score'].max(),df['previous_scores'].mean())
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 data = df
@@ -66,10 +67,18 @@ axs[1,1].bar(std_data.index, std_data['previous_scores']); axs[1,1].set_title('�
 axs[1,1].set_xlabel('Кол-во студентов')
 #plt.show()
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, target, test_size = 0.2, random_state = 42)
-from sklearn.linear_model import LinearRegression
 lr = LinearRegression()
 lr.fit(X_train, y_train)
 ylr_pred = lr.predict(X_test)
-r2 = r2_score(y_test, ylr_pred)
-print(ylr_pred)
-print(r2)
+r2_1 = r2_score(y_test, ylr_pred)
+print(f"Точность линейной регрессии: {r2_1}")
+r = Ridge()
+r.fit(X_train, y_train)
+yr_pred = r.predict(X_test)
+r2_2 = r2_score(y_test, yr_pred)
+print(f"Точность линейной регрессии Ridge: {r2_2}")
+rf = RandomForestRegressor(n_estimators=500, max_depth=15, random_state=42, n_jobs=-1)
+rf.fit(X_train, y_train)
+yrf_pred = rf.predict(X_test)
+r2_3 = r2_score(y_test, yrf_pred)
+print(f"Точность 'Случайного леса': {r2_3}")
