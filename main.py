@@ -93,3 +93,20 @@ plt.title(f"Предсказания vs Реальность")
 plt.grid(True, alpha=0.3)
 plt.show()
 plt.close()
+
+f_names = X.columns
+f_importance = pd.DataFrame({
+    'feature': f_names,
+    'importance': rf.feature_importances_
+}).sort_values('importance', ascending=False)
+
+plt.figure(figsize=(10, 6))
+plt.barh(f_importance['feature'], f_importance['importance'],
+         color='skyblue', alpha=0.8, edgecolor='black')
+plt.xlabel('Важность признака')
+plt.title('Важность признаков', fontsize=14)
+plt.grid(axis='x', alpha=0.3)
+plt.tight_layout()
+plt.gca().invert_yaxis()
+plt.show()
+plt.close()
