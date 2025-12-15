@@ -75,28 +75,23 @@ lr = LinearRegression()
 lr.fit(X_train, y_train)
 ylr_pred = lr.predict(X_test)
 r2_1 = r2_score(y_test, ylr_pred)
-print(f"Точность линейной регрессии: {r2_1}")
 r = Ridge()
 r.fit(X_train, y_train)
 yr_pred = r.predict(X_test)
 r2_2 = r2_score(y_test, yr_pred)
-print(f"Точность линейной регрессии Ridge: {r2_2}")
 rf = RandomForestRegressor(n_estimators=500, max_depth=15, random_state=42, n_jobs=-1)
 rf.fit(X_train, y_train)
 yrf_pred = rf.predict(X_test)
 r2_3 = r2_score(y_test, yrf_pred)
-print(f"Точность Random Forest: {r2_3}")
 ################ Добавил 2 модели
 gb = GradientBoostingRegressor(n_estimators=100, max_depth=5, random_state=42)
 gb.fit(X_train, y_train)
 ygb_pred = gb.predict(X_test)
 r2_gb = r2_score(y_test, ygb_pred)
-print(f"Точность Gradient Boosting: {r2_gb}")
 kn = KNeighborsRegressor(n_neighbors=5)
 kn.fit(X_train, y_train)
 ykn_pred = kn.predict(X_test)
 r2_kn = r2_score(y_test, ykn_pred)
-print(f"Точность K Neighbours: {r2_kn}")
 #input()
 f_names = X.columns
 f_importance = pd.DataFrame({
@@ -121,6 +116,43 @@ X_top2 = df[f_top2]
 scaler_2 = StandardScaler()
 X_scaled_2 = scaler_2.fit_transform(X_top2)
 
+#input()
+plt.figure(figsize=(8, 6))
+plt.scatter(y_test, ylr_pred, alpha=0.6)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], '--', color = 'red')
+plt.xlabel("Реальный балл")
+plt.ylabel("Предсказанный балл")
+plt.title(f"Предсказания vs Реальность")
+plt.grid(True, alpha=0.3)
+#plt.show()
+#plt.close()
+
+
+
+predictions = {
+    'LR': ylr_pred,
+    'Ridge': yr_pred,
+    'RF': yrf_pred,
+    'GB': ygb_pred,
+    'KN': ykn_pred
+}
+
+results = []
+for name, prediction in predictions.items():
+    r2 = r2_score(y_test, prediction)
+    mae = mean_absolute_error(y_test, prediction)
+    mse = mean_squared_error(y_test, prediction)
+    results.append({
+        'Модель': name,
+        'r2': r2,
+        'mae': mae,
+        'mse': mse
+    })
+results_df = pd.DataFrame(results)
+results_df = results_df.sort_values('r2', ascending=False)
+results_df.set_index('Модель',inplace=True)
+print(results_df)
+
 X_train_2, X_test_2, y_train_2, y_test_2 = train_test_split(
     X_scaled_2, target, test_size=0.2, random_state=42)
 rf_2 = RandomForestRegressor(n_estimators=500, max_depth=15, random_state=42, n_jobs=-1)
@@ -133,16 +165,6 @@ ylr_pred_2 = lr_2.predict(X_test_2)
 r2_lr_top2 = r2_score(y_test_2, ylr_pred_2)
 print(f"Результаты RandomForest с 2 признаками: {r2_top2} , Разница с 4 признаками {r2_3-r2_top2}")
 print(f"Результаты Линейной регрессии с 2 признаками: {r2_lr_top2} , Разница с 4 признаками {r2_1-r2_lr_top2}")
-#input()
-plt.figure(figsize=(8, 6))
-plt.scatter(y_test, ylr_pred, alpha=0.6)
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], '--', color = 'red')
-plt.xlabel("Реальный балл")
-plt.ylabel("Предсказанный балл")
-plt.title(f"Предсказания vs Реальность")
-plt.grid(True, alpha=0.3)
-#plt.show()
-#plt.close()
 
 ## minmaxscaler
 scaler_mm = MinMaxScaler()
@@ -160,26 +182,3 @@ lr_pred_mm = lr_mm.predict(X_test_mm)
 r2_lr_mm = r2_score(y_test_mm, lr_pred_mm)
 print(f"Результаты RandomForest с MinMaxScaler: {r2_mm}, Разница с StandartScaler: {abs(r2_mm-r2_3)}")
 print(f"Результаты Линейной регрессии с MinMaxScaler: {r2_lr_mm}, Разница с StandartScaler: {abs(r2_mm-r2_1)}")
-
-predictions = {
-    'LR': ylr_pred,
-    'Ridge': yr_pred,
-    'RF': yrf_pred,
-    'GB': ygb_pred,
-    'KN': ykn_pred
-}
-
-results = []
-for name, prediction in predictions.items():
-    r2 = r2_score(y_test, prediction)
-    mae = mean_absolute_error(y_test, prediction)
-    mse = mean_squared_error(y_test, prediction)
-    results.append({
-        'name': name,
-        'r2': r2,
-        'mae': mae,
-        'mse': mse
-    })
-results_df = pd.DataFrame(results)
-results_df = results_df.sort_values('r2', ascending=False)
-print(results_df)
