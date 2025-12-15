@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
 import opendatasets as od
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
@@ -82,7 +85,18 @@ rf = RandomForestRegressor(n_estimators=500, max_depth=15, random_state=42, n_jo
 rf.fit(X_train, y_train)
 yrf_pred = rf.predict(X_test)
 r2_3 = r2_score(y_test, yrf_pred)
-print(f"Точность 'Случайного леса': {r2_3}")
+print(f"Точность Random Forest: {r2_3}")
+################ Добавил 2 модели
+gb = GradientBoostingRegressor(n_estimators=100, max_depth=5, random_state=42)
+gb.fit(X_train, y_train)
+ygb_pred = gb.predict(X_test)
+r2_gb = r2_score(y_test, ygb_pred)
+print(f"Точность Gradient Boosting: {r2_gb}")
+kn = KNeighborsRegressor(n_neighbors=5)
+kn.fit(X_train, y_train)
+ykn_pred = kn.predict(X_test)
+r2_kn = r2_score(y_test, ykn_pred)
+print(f"Точность K Neighbours: {r2_kn}")
 #input()
 f_names = X.columns
 f_importance = pd.DataFrame({
@@ -146,3 +160,26 @@ lr_pred_mm = lr_mm.predict(X_test_mm)
 r2_lr_mm = r2_score(y_test_mm, lr_pred_mm)
 print(f"Результаты RandomForest с MinMaxScaler: {r2_mm}, Разница с StandartScaler: {abs(r2_mm-r2_3)}")
 print(f"Результаты Линейной регрессии с MinMaxScaler: {r2_lr_mm}, Разница с StandartScaler: {abs(r2_mm-r2_1)}")
+
+predictions = {
+    'LR': ylr_pred,
+    'Ridge': yr_pred,
+    'RF': yrf_pred,
+    'GB': ygb_pred,
+    'KN': ykn_pred
+}
+
+results = []
+for name, prediction in predictions.items():
+    r2 = r2_score(y_test, prediction)
+    mae = mean_absolute_error(y_test, prediction)
+    mse = mean_squared_error(y_test, prediction)
+    results.append({
+        'name': name,
+        'r2': r2,
+        'mae': mae,
+        'mse': mse
+    })
+results_df = pd.DataFrame(results)
+results_df = results_df.sort_values('r2', ascending=False)
+print(results_df)
