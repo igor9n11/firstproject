@@ -10,6 +10,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import r2_score
 from sklearn.linear_model import LinearRegression, Ridge
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
+from tqdm import tqdm
 pd.set_option('display.max_columns', None)
 url = "https://www.kaggle.com/datasets/kainatjamil12/students-exams-score-analysis-dataset"
 od.download(url)
@@ -213,6 +218,71 @@ for n2 in ns3:
     r2 = r2_score(y_test, ykn_pred)
     kn_res.append({'Neighbors': n2, 'r2': r2})
 kn_res_df = pd.DataFrame(kn_res)
+print('Влияние n_neighbors для KNeighborsRegressor:')
 print(kn_res_df)
 
 ## neironka
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(device)
+X_train_t = torch.tensor(X_train, dtype=torch.float32)
+y_train_t = torch.tensor(y_train.values, dtype=torch.float32).reshape(-1, 1)
+X_test_t = torch.tensor(X_test, dtype=torch.float32)
+y_test_t = torch.tensor(y_test.values, dtype=torch.float32).reshape(-1, 1)
+train_loader = DataLoader(TensorDataset(X_train_t, y_train_t), batch_size=32, shuffle=True)
+test_loader = DataLoader(TensorDataset(X_test_t, y_test_t), batch_size=32)
+class FCNN(nn.Module):
+    def __init__(self, input_dim):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Linear(input_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1)
+        )
+    def forward(self, x):
+        return self.model(x)
+model = FCNN(X_train.shape[1]).to(device)
+criterion = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+epochs = 100
+train_losses = []
+test_losses = []
+for epoch in range(epochs):
+    model.train()
+    running_loss = 0.0
+    for xb, yb in train_loader:
+        xb = xb.to(device)
+        yb = yb.to(device)
+        optimizer.zero_grad()
+        out = model(xb)
+        loss = criterion(out, yb)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+    avg_train_loss = running_loss / len(train_loader)
+    train_losses.append(avg_train_loss)
+    model.eval()
+    test_loss = 0.0
+    with torch.no_grad():
+        for xb, yb in test_loader:
+            xb = xb.to(device)
+            yb = yb.to(device)
+            out = model(xb)
+            test_loss += criterion(out, yb).item()
+    avg_test_loss = test_loss / len(test_loader)
+    test_losses.append(avg_test_loss)
+    print(f"epoch: {epoch+1}, train loss: {avg_train_loss}, test loss: {avg_test_loss}")
+model.eval()
+all_preds = []
+all_targets = []
+with torch.no_grad():
+    for xb, yb in test_loader:
+        xb = xb.to(device)
+        yb = yb.to(device)
+        out = model(xb)
+        all_preds.extend(out.cpu().numpy())
+        all_targets.extend(yb.cpu().numpy())
