@@ -126,9 +126,6 @@ plt.title(f"Предсказания vs Реальность")
 plt.grid(True, alpha=0.3)
 #plt.show()
 #plt.close()
-
-
-
 predictions = {
     'LR': ylr_pred,
     'Ridge': yr_pred,
@@ -136,7 +133,6 @@ predictions = {
     'GB': ygb_pred,
     'KN': ykn_pred
 }
-
 results = []
 for name, prediction in predictions.items():
     r2 = r2_score(y_test, prediction)
@@ -182,3 +178,41 @@ lr_pred_mm = lr_mm.predict(X_test_mm)
 r2_lr_mm = r2_score(y_test_mm, lr_pred_mm)
 print(f"Результаты RandomForest с MinMaxScaler: {r2_mm}, Разница с StandartScaler: {abs(r2_mm-r2_3)}")
 print(f"Результаты Линейной регрессии с MinMaxScaler: {r2_lr_mm}, Разница с StandartScaler: {abs(r2_mm-r2_1)}")
+
+## влияние гиперпараметров
+
+ns1 = [10,55,100,300,555,1000]
+rf_res = []
+for n in ns1:
+    rf_ns = RandomForestRegressor(n_estimators=n, max_depth=15, random_state=42, n_jobs=-1)
+    rf_ns.fit(X_train, y_train)
+    y_pred_ns = rf_ns.predict(X_test)
+    r2 = r2_score(y_test, y_pred_ns)
+    rf_res.append({'n_estimators': n, 'r2': r2})
+rf_res_df = pd.DataFrame(rf_res)
+print('Влияние n_estimators и max_depth для RandomForest:')
+
+ns2 = [3,5,10,15,25,None]
+rf_res1 = []
+for n1 in ns2:
+    rf_ns = RandomForestRegressor(n_estimators=500, max_depth=n1, random_state=42, n_jobs=-1)
+    rf_ns.fit(X_train, y_train)
+    y_pred_ns = rf_ns.predict(X_test)
+    r2 = r2_score(y_test, y_pred_ns)
+    rf_res1.append({'Depth': n1, 'r2': r2})
+rf_res1_df = pd.DataFrame(rf_res1)
+print('Влияние max_depth для RandomForest:')
+vmeste_df = pd.concat([rf_res_df, rf_res1_df], axis=1)
+print(vmeste_df)
+ns3 = [1,3,5,10,20,30]
+kn_res = []
+for n2 in ns3:
+    kn = KNeighborsRegressor(n_neighbors=n2)
+    kn.fit(X_train, y_train)
+    ykn_pred = kn.predict(X_test)
+    r2 = r2_score(y_test, ykn_pred)
+    kn_res.append({'Neighbors': n2, 'r2': r2})
+kn_res_df = pd.DataFrame(kn_res)
+print(kn_res_df)
+
+## neironka
